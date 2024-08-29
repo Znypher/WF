@@ -1,0 +1,108 @@
+-- Initialization of Orion Library and GUI
+if game.PlaceId == 155615604 then
+    local OrionLib = loadstring(game:HttpGet('https://raw.githubusercontent.com/shlexware/Orion/main/source'))()
+    local Window = OrionLib:MakeWindow({
+        Name = "WF HUB",
+        HidePremium = false,
+        IntroEnabled = false,
+        IntroText = "RTX-ON",
+        SaveConfig = true,
+        ConfigFolder = "WF HUB"
+    })
+
+    -- Values
+    _G.HeadSize = 10
+    _G.Disabled = true
+
+    -- Tabs
+    local MainTab = Window:MakeTab({
+        Name = "Main",
+        Icon = "rbxassetid://4483345998",
+        PremiumOnly = false
+    })
+
+    -- Toggle for enabling/disabling head updates
+    MainTab:AddToggle({
+        Name = "Enable Head Update",
+        Default = true,
+        Callback = function(state)
+            _G.Disabled = not state
+        end
+    })
+
+    -- Example of adding a slider for head size (optional)
+    MainTab:AddSlider({
+        Name = "Head Size",
+        Min = 1,
+        Max = 50,
+        Default = _G.HeadSize,
+        Increment = 1,
+        Callback = function(value)
+            _G.HeadSize = value
+        end
+    })
+
+    -- Initialize OrionLib
+    OrionLib:Init()
+
+    -- Functions for updating player heads and ESP
+    local RunService = game:GetService('RunService')
+    local Players = game:GetService('Players')
+
+    -- Function to update player's head
+    local function updatePlayerHead(player)
+        local head = player.Character and player.Character:FindFirstChild("Head")
+        if head then
+            pcall(function()
+                head.Size = Vector3.new(_G.HeadSize, _G.HeadSize, _G.HeadSize)
+                head.Transparency = 0.4
+                head.BrickColor = BrickColor.new("Red")
+                head.Material = Enum.Material.Neon
+                head.CanCollide = false
+                head.Massless = true
+            end)
+        end
+    end
+
+    -- Function to create/update ESP highlight only on the head of other players
+    local function updateHeadESP()
+        local localPlayer = Players.LocalPlayer
+        for _, player in pairs(Players:GetPlayers()) do
+            if player ~= localPlayer then
+                local head = player.Character and player.Character:FindFirstChild("Head")
+                if head then
+                    local esp = head:FindFirstChild("Highlight")
+                    if not esp then
+                        esp = Instance.new("Highlight")
+                        esp.Name = "Highlight"
+                        esp.FillTransparency = 0.5
+                        esp.FillColor = Color3.new(1, 0, 0) -- Red fill color
+                        esp.OutlineColor = Color3.new(1, 0, 0) -- Red outline color
+                        esp.OutlineTransparency = 0
+                        esp.Parent = head
+                    else
+                        -- Update existing Highlight to red
+                        esp.FillColor = Color3.new(1, 0, 0) -- Red fill color
+                        esp.OutlineColor = Color3.new(1, 0, 0) -- Red outline color
+                    end
+                end
+            end
+        end
+    end
+
+    -- Main loop to continuously apply changes
+    RunService.RenderStepped:Connect(function()
+        if not _G.Disabled then
+            for _, player in pairs(Players:GetPlayers()) do
+                if player ~= Players.LocalPlayer then
+                    updatePlayerHead(player)
+                end
+            end
+        end
+    end)
+
+    -- Loop to continuously update ESP on heads of other players
+    while wait(0.5) do
+        updateHeadESP()
+    end
+end
